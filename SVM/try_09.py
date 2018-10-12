@@ -20,7 +20,7 @@ from skimage.feature import hog
 import os
 import glob
 from sklearn.externals import joblib
-import svm as svmLibsvm
+#import svm as svmLibsvm
 import pprint
 import pickle
 #from libsvm.svm import *
@@ -62,6 +62,17 @@ def hoggify(path,extension,is_color):
         img = hogcv2.compute(img)
         img = np.squeeze(img)
         data.append(img)
+    return data
+
+def hoggify_image(image_file_name,extension,is_color):
+    data=[]
+    file=image_file_name+'.'+extension
+    image = cv2.imread(file, is_color)
+    dim = 128
+    img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
+    img = hogcv2.compute(img)
+    img = np.squeeze(img)
+    data.append(img)
     return data
 
 def hoggify2(path,extension,is_color):
@@ -162,6 +173,19 @@ def draw_detections(img, rects, thickness = 1):
     for x, y, w, h in rects:
         pad_w, pad_h = int(0.15*w), int(0.05*h)
         cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
+
+def readGameConfigFile(path,filename):
+    firstChunkFile=''
+    gameConfigFile=''
+    matrixROIFile=''
+    boundingBoxFile=''
+    with open(path+'/'+'filename', 'r') as f:
+        firstChunkFile=f.readline()
+        gameConfigFile=f.readline()
+        matrixROIFile=f.readline()
+        boundingBoxFile=f.readline()
+        f.close()
+    return [firstChunkFile,gameConfigFile,matrixROIFile,boundingBoxFile]
 
 def test_01():
     dataHogPositivos=hoggify(PATH_POSITIVAS,'jpg',False)
@@ -281,7 +305,10 @@ def test_03():
 #    plt.title("Final Detections after applying NMS")
 #    plt.show()
 #fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
-fgbg = cv2.createBackgroundSubtractorMOG2()
+BShistory =  1000
+kernel = np.ones((5,5),np.uint8)
+fgbg = cv2.createBackgroundSubtractorMOG2(BShistory,100,False)
+#fgbg = cv2.createBackgroundSubtractorMOG2()
 bandera=True
 
 def test_04(videoFilePath,videoFileName):
@@ -317,7 +344,12 @@ def test_04(videoFilePath,videoFileName):
 #            print(hist.shape)
 #            print(hist[:36])
             fgmask = fgbg.apply(image_results)
-            fgmaskResized = cv2.resize(fgmask, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
+            dilation = cv2.dilate(fgmask,kernel,iterations = 3)
+            erosion = cv2.erode(dilation,kernel,iterations = 2)
+#             dilation = cv2.dilate(erosion,kernel,iterations = 2)
+#            fgmaskResized = cv2.resize(fgmask, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
+            fgmaskResized = cv2.resize(erosion, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
+#            fgmaskResized = cv2.resize(dilation, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
 #            cv2.imshow('Results',image_results)
 #            cv2.imshow('frame',fgmask)
             cv2.imshow('frame',fgmaskResized)
@@ -332,14 +364,40 @@ def test_04(videoFilePath,videoFileName):
         capture.release()
 #    cv2.destroyAllWindows()
     
-if __name__=='__main__':
+def test_05():
+    global bandera
     bandera=True
-    for i in range(80,100):
+    for i in range(0,100):
         if bandera:
             filename='chunk_'+str(i).zfill(6)+'.avi'
             print(filename)
             test_04('/home/pepe/DATOS/Shared_Videos/TijuanaSantos/folder_of_chunks',filename)
     cv2.destroyAllWindows()
+
+def test_06():
+    dataHogPositivosTest=hoggify(PATH_POSITIVAS_TEST,'jpg',False)
+    dataHogNegativosTest=hoggify(PATH_NEGATIVAS_TEST,'jpg',False)
+    nTest=len(dataHogPositivosTest)
+    mTest=len(dataHogNegativosTest)
+    dataHogTest=dataHogPositivosTest+dataHogNegativosTest
+    labelsHogTest=[0]*nTest+[1]*mTest
+    clf = joblib.load(MODEL_PATH+'/'+'modelo_svm_scikit.pkl', 'wb')
+    predicted=clf.predict(dataHogTest)
+    print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
+    
+def test_07():
+    image_file_name='/home/pepe/DATOS/imagenes/MuestrasPlayers2/HumanosTest/GameConfig_107'
+    extension='jpg'
+    dataHogSample=hoggify_image(image_file_name,extension,False)
+    clf = joblib.load(MODEL_PATH+'/'+'modelo_svm_scikit.pkl', 'wb')
+    predicted=clf.predict_proba(dataHogSample)
+    print(predicted[0,0])
+    with open('./probability.dat', 'w') as f:
+        f.write(str(predicted[0,0]))
+        f.close()
+    
+if __name__=='__main__':
+    test_05()
 #    test_02()
 #    test_03()
 #    responses=np.repeat(np.arange(2),250)[:,np.newaxis]
