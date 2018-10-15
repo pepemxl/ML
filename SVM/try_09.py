@@ -35,10 +35,10 @@ PATH_NEGATIVAS = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanos"
 #PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTrain"
 #PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/HumanosTest"
 #PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTest"
-PATH_POSITIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers2/HumanosTrain"
-PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers2/NoHumanosTrain"
-PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers2/HumanosTest"
-PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers2/NoHumanosTest"
+PATH_POSITIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/HumanosTrain"
+PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/NoHumanosTrain"
+PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/HumanosTest"
+PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/NoHumanosTest"
 MODEL_PATH= "/home/pepe/DATOS/imagenes/MuestrasPlayers"
 MODEL_FILENAME = "./model"
  
@@ -57,6 +57,20 @@ def hoggify(path,extension,is_color):
         image = cv2.imread(file, is_color)
 #        dim=256
 #        dim = 128
+        dim = 128
+        img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
+        img = hogcv2.compute(img)
+        img = np.squeeze(img)
+        data.append(img)
+    return data
+
+def hoggify_folder(path,extension,is_color,listOfFiles):
+    data=[]
+    lista=glob.glob(os.path.join(path,"*"+extension))
+    lista=np.squeeze(lista)
+    for file in lista:
+        listOfFiles.append(os.path.basename(file))
+        image = cv2.imread(file, is_color)
         dim = 128
         img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
         img = hogcv2.compute(img)
@@ -383,6 +397,7 @@ def test_06():
     labelsHogTest=[0]*nTest+[1]*mTest
     clf = joblib.load(MODEL_PATH+'/'+'modelo_svm_scikit.pkl', 'wb')
     predicted=clf.predict(dataHogTest)
+#    predicted_proba=clf.predict_proba(dataHogTest)
     print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
     
 def test_07():
@@ -396,9 +411,37 @@ def test_07():
         f.write(str(predicted[0,0]))
         f.close()
     
+def test_08():
+    listOfFiles=[]
+    dataHogToTest=hoggify_folder(PATH_POSITIVAS_TEST,'jpg',False,listOfFiles)
+    nTest=len(dataHogToTest)
+    clf = joblib.load(MODEL_PATH+'/'+'modelo_svm_scikit.pkl', 'wb')
+#    predicted=clf.predict(dataHogToTest)
+    predicted_proba=clf.predict_proba(dataHogToTest)
+    with open('./probability.dat', 'w') as f:
+        for i in range(nTest):
+            print("%s %f"%(listOfFiles[i],predicted_proba[i,0]))
+            f.write("%s %f\n"%(listOfFiles[i],predicted_proba[i,0]))
+        f.close()
+#    print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
+    
+def test_09():
+    dataHogPositivosTest=hoggify(PATH_POSITIVAS_TEST,'jpg',False)
+    dataHogNegativosTest=hoggify(PATH_NEGATIVAS_TEST,'jpg',False)
+    nTest=len(dataHogPositivosTest)
+    mTest=len(dataHogNegativosTest)
+    dataHogTest=dataHogPositivosTest+dataHogNegativosTest
+    labelsHogTest=[0]*nTest+[1]*mTest
+    clf = joblib.load(MODEL_PATH+'/'+'modelo_svm_scikit.pkl', 'wb')
+    predicted=clf.predict(dataHogTest)
+    predicted_proba=clf.predict_proba(dataHogTest)
+    print(predicted_proba)
+    print(len(predicted_proba))
+    print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
+        
 if __name__=='__main__':
-    test_05()
-#    test_02()
+#    test_05()
+    test_08()
 #    test_03()
 #    responses=np.repeat(np.arange(2),250)[:,np.newaxis]
 #    dataHogPositivos=hoggify(PATH_POSITIVAS,'jpg',False)
