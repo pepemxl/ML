@@ -20,12 +20,18 @@ from skimage.feature import hog
 import os
 import glob
 from sklearn.externals import joblib
-#import svm as svmLibsvm
+# import svm as svmLibsvm
 import pprint
 import pickle
+import yaml
+import re
+#local libraries
+#from . import pputils
+import pputils
 #from libsvm.svm import *
 #from libsvm.svmutil import *
 #import cPickle
+
 
 #PATH_POSITIVAS = "/home/pepe/DATOS/imagenes/caras/s1"
 #PATH_NEGATIVAS = "/home/pepe/DATOS/imagenes/caras/s2"
@@ -35,16 +41,17 @@ PATH_NEGATIVAS = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanos"
 #PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTrain"
 #PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/HumanosTest"
 #PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTest"
-PATH_POSITIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/HumanosTrain"
-PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/NoHumanosTrain"
-PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/HumanosTest"
-PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers3/NoHumanosTest"
+PATH_POSITIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTrain"
+PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTrain"
+PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTest"
+PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTest"
 MODEL_PATH= "/home/pepe/DATOS/imagenes/MuestrasPlayers"
 MODEL_FILENAME = "./model"
+
  
-hogcv2 = cv2.HOGDescriptor()
-svm_params = dict( kernel_type = cv2.ml.SVM_LINEAR,
-                   svm_type = cv2.ml.SVM_C_SVC,
+hogcv2 = cv2.cv2.HOGDescriptor()
+svm_params = dict( kernel_type = cv2.cv2.ml.SVM_LINEAR,
+                   svm_type = cv2.cv2.ml.SVM_C_SVC,
                    C=2.67, 
                    gamma=5.383 )
 
@@ -54,11 +61,9 @@ def hoggify(path,extension,is_color):
     lista=glob.glob(os.path.join(path,"*"+extension))
     lista=np.squeeze(lista)
     for file in lista:
-        image = cv2.imread(file, is_color)
-#        dim=256
-#        dim = 128
+        image = cv2.cv2.imread(file, is_color)
         dim = 128
-        img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
+        img = cv2.cv2.resize(image, (dim,dim), interpolation = cv2.cv2.INTER_AREA)
         img = hogcv2.compute(img)
         img = np.squeeze(img)
         data.append(img)
@@ -70,9 +75,9 @@ def hoggify_folder(path,extension,is_color,listOfFiles):
     lista=np.squeeze(lista)
     for file in lista:
         listOfFiles.append(os.path.basename(file))
-        image = cv2.imread(file, is_color)
+        image = cv2.cv2.imread(file, is_color)
         dim = 128
-        img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
+        img = cv2.cv2.resize(image, (dim,dim), interpolation = cv2.cv2.INTER_AREA)
         img = hogcv2.compute(img)
         img = np.squeeze(img)
         data.append(img)
@@ -81,9 +86,9 @@ def hoggify_folder(path,extension,is_color,listOfFiles):
 def hoggify_image(image_file_name,extension,is_color):
     data=[]
     file=image_file_name+'.'+extension
-    image = cv2.imread(file, is_color)
+    image = cv2.cv2.imread(file, is_color)
     dim = 128
-    img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
+    img = cv2.cv2.resize(image, (dim,dim), interpolation = cv2.cv2.INTER_AREA)
     img = hogcv2.compute(img)
     img = np.squeeze(img)
     data.append(img)
@@ -94,9 +99,9 @@ def hoggify2(path,extension,is_color):
     lista=glob.glob(os.path.join(path,"*"+extension))
     lista=np.squeeze(lista)
     for file in lista:
-        image = cv2.imread(file, is_color)
+        image = cv2.cv2.imread(file, is_color)
         dim = 128
-        img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
+        img = cv2.cv2.resize(image, (dim,dim), interpolation = cv2.cv2.INTER_AREA)
         winSize = (64,64)
         blockSize = (16,16)
         blockStride = (8,8)
@@ -108,7 +113,7 @@ def hoggify2(path,extension,is_color):
         L2HysThreshold = 2.0000000000000001e-01
         gammaCorrection = 0
         nlevels = 64
-        hog2 = cv2.HOGDescriptor(winSize,blockSize,blockStride,
+        hog2 = cv2.cv2.HOGDescriptor(winSize,blockSize,blockStride,
                             cellSize,nbins,derivAperture,winSigma,
                             histogramNormType,L2HysThreshold,gammaCorrection,nlevels)
         img = hog2.compute(img)
@@ -126,55 +131,34 @@ def svm_classify(features,labels):
 
 # Hasta donde he revisado no es posible obtener la probabilidad usando svm de opencv
 def svm_classify2(features,labels):
-    svm2=cv2.ml.SVM_create()
-    svm2.setKernel(cv2.ml.SVM_LINEAR)
-    svm2.setType(cv2.ml.SVM_C_SVC)
+    svm2 = cv2.cv2.ml.SVM_create()
+    svm2.setKernel(cv2.cv2.ml.SVM_LINEAR)
+    svm2.setType(cv2.cv2.ml.SVM_C_SVC)
     svm2.setC(2.67)
     svm2.setP(0.2)
 #    svm.train(trainData,responses, params=svm_params)
     responses = np.array(labels).flatten()
     trainData = np.array(features)
 #    svm2.train(trainData,responses, params=svm_params)
-    svm2.train(trainData,cv2.ml.ROW_SAMPLE,responses)
+    svm2.train(trainData,cv2.cv2.ml.ROW_SAMPLE,responses)
 #    svm2.train(features, cv2.ml.ROW_SAMPLE, labels)
     svm2.save(MODEL_PATH+'/'+'modelo_svm_cv2.dat')
     return svm2
 
 def svm_classify3(features,labels):
-    svm3=svmLibsvm
-    svm3.setKernel(cv2.ml.SVM_LINEAR)
-    svm3.setType(cv2.ml.SVM_C_SVC)
+    svm3 = svmLibsvm
+    svm3.setKernel(cv2.cv2.ml.SVM_LINEAR)
+    svm3.setType(cv2.cv2.ml.SVM_C_SVC)
     svm3.setC(2.67)
     svm3.setP(0.2)
 #    svm.train(trainData,responses, params=svm_params)
     responses = np.array(labels).flatten()
     trainData = np.array(features)
 #    svm2.train(trainData,responses, params=svm_params)
-    svm3.train(trainData,cv2.ml.ROW_SAMPLE,responses)
+    svm3.train(trainData,cv2.cv2.ml.ROW_SAMPLE,responses)
 #    svm2.train(features, cv2.ml.ROW_SAMPLE, labels)
     svm3.save(MODEL_PATH+'/'+'modelo_svm_cv2.dat')
-    return svm2
-
-def list_to_matrix(lst):
-    return np.stack(lst) 
-
-def s_x(img):
-    kernel = np.array([[-1, 0, 1]])
-    imgx = signal.convolve2d(img, kernel, boundary='symm', mode='same')
-    return imgx
-
-def s_y(img):
-    kernel = np.array([[-1, 0, 1]]).T
-    imgy = signal.convolve2d(img, kernel, boundary='symm', mode='same')
-    return imgy
-
-def grad(img):
-    imgx = s_x(img)
-    imgy = s_y(img)
-    s = np.sqrt(imgx**2 + imgy**2)
-    theta = np.arctan2(imgx, imgy)
-    theta[theta<0] = np.pi + theta[theta<0]
-    return (s, theta)
+    return svm3
 
 @staticmethod
 def inside(r, q):
@@ -182,24 +166,18 @@ def inside(r, q):
     qx, qy, qw, qh = q
     return rx > qx and ry > qy and rx + rw < qx + qw and ry + rh < qy + qh
 
+
 @staticmethod
 def draw_detections(img, rects, thickness = 1):
     for x, y, w, h in rects:
         pad_w, pad_h = int(0.15*w), int(0.05*h)
-        cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), (0, 255, 0), thickness)
+        cv2.cv2.rectangle(img, (x+pad_w, y+pad_h), (x+w-pad_w, y+h-pad_h), 
+                          (0, 255, 0), thickness)
 
-def readGameConfigFile(path,filename):
-    firstChunkFile=''
-    gameConfigFile=''
-    matrixROIFile=''
-    boundingBoxFile=''
-    with open(path+'/'+'filename', 'r') as f:
-        firstChunkFile=f.readline()
-        gameConfigFile=f.readline()
-        matrixROIFile=f.readline()
-        boundingBoxFile=f.readline()
-        f.close()
-    return [firstChunkFile,gameConfigFile,matrixROIFile,boundingBoxFile]
+
+def readTransformMatrix(path, filename):
+    with open(path+'/'+filename.lstrip('/'), 'r') as f:
+        yaml.load(f)
 
 def test_01():
     dataHogPositivos=hoggify(PATH_POSITIVAS,'jpg',False)
@@ -221,20 +199,22 @@ def test_01():
     print("probabilidad 0: %f , 1:%f"%(math.exp(log_probabilities[0,0]),math.exp(log_probabilities[0,1])))
     
 def test_02():
-    dataHogPositivos=hoggify(PATH_POSITIVAS_TRAIN,'jpg',False)
-    dataHogNegativos=hoggify(PATH_NEGATIVAS_TRAIN,'jpg',False)
+    extension='png'
+    dataHogPositivos=hoggify(PATH_POSITIVAS_TRAIN,extension,False)
+    dataHogNegativos=hoggify(PATH_NEGATIVAS_TRAIN,extension,False)
     n=len(dataHogPositivos)
     m=len(dataHogNegativos)
     dataHog=dataHogPositivos+dataHogNegativos
     labelsHog=[0]*n+[1]*m
-    dataHogPositivosTest=hoggify(PATH_POSITIVAS_TEST,'jpg',False)
-    dataHogNegativosTest=hoggify(PATH_NEGATIVAS_TEST,'jpg',False)
+    dataHogPositivosTest=hoggify(PATH_POSITIVAS_TEST,extension,False)
+    dataHogNegativosTest=hoggify(PATH_NEGATIVAS_TEST,extension,False)
     nTest=len(dataHogPositivosTest)
     mTest=len(dataHogNegativosTest)
     dataHogTest=dataHogPositivosTest+dataHogNegativosTest
     labelsHogTest=[0]*nTest+[1]*mTest
     clf=svm_classify(dataHog,labelsHog)
     predicted=clf.predict(dataHogTest)
+#    predicted_proba=clf.predict_proba(dataHogTest)
     print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
     
 def test_03():
@@ -320,36 +300,52 @@ def test_03():
 #    plt.show()
 #fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
 BShistory =  1000
-kernel = np.ones((5,5),np.uint8)
-fgbg = cv2.createBackgroundSubtractorMOG2(BShistory,100,False)
+#kernel = np.ones((5,5),np.uint8)
+kernel = cv2.cv2.getStructuringElement(cv2.cv2.MORPH_RECT,(9,15))
+#kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,3))
+# kernel2 = cv2.cv2.getStructuringElement(cv2.cv2.MORPH_ELLIPSE, (3, 3))
+kernel2 = cv2.cv2.getStructuringElement(cv2.cv2.MORPH_ELLIPSE, (2, 2))
+#kernel2 = cv2.cv2.getStructuringElement(cv2.cv2.MORPH_ELLIPSE, (4, 7))
+#kernel2 = cv2.cv2.getStructuringElement(cv2.cv2.MORPH_RECT,(9,15))
+min_thresh=50
+max_thresh=500
+fgbg = cv2.cv2.createBackgroundSubtractorMOG2(BShistory,100,False)
 #fgbg = cv2.createBackgroundSubtractorMOG2()
 bandera=True
 
-def test_04(videoFilePath,videoFileName):
+
+def test_04(videoFilePath, videoFileName):
     """ Test 04
-    The winStride  parameter is a 2-tuple that dictates the “step size” in both the x and y location of the sliding window.
-    The padding parameter is a tuple which indicates the number of pixels in both the x and y direction in which the sliding window ROI is “padded” prior to HOG feature extraction.
+    The winStride  parameter is a 2-tuple that dictates the “step size” in both
+    the x and y location of the sliding window.
+    The padding parameter is a tuple which indicates the number of pixels in
+    both the x and y direction in which the sliding window ROI is “padded”
+    prior to HOG feature extraction.
     """
     global bandera
-    winStride=(8,8)
+    winStride = (8,8)
 #    padding=(32,32)
-    padding=(8,8)
+    padding = (8,8)
 #    padding=(30,70)
-    locations=((0,0),)
-    scale=1.05
-    iniFrame=0
-    endFrame=200
+    locations = ((0,0),)
+    scale = 1.05
+    iniFrame = 0
+#    endFrame=200
+    endFrame = 10000
+    connectivity = 4
     currentSingleFrameNumber=0
-    capture = cv2.VideoCapture(os.path.join(videoFilePath, videoFileName))
+    capture = cv2.cv2.VideoCapture(os.path.join(videoFilePath, videoFileName))
 #    fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
 #    fgbg = cv2.createBackgroundSubtractorMOG2()
 #    fgbg2 = cv2.bgsegm.createBackgroundSubtractorMOG2()
     assert(capture.isOpened())
-    capture.set(cv2.CAP_PROP_POS_FRAMES,currentSingleFrameNumber)
+    capture.set(cv2.cv2.CAP_PROP_POS_FRAMES,currentSingleFrameNumber)
+    contadorFrames = 0
     for currentSingleFrameNumber in range(iniFrame,int(endFrame)):
         success, origFrameImg = capture.read()
         if success:
             image_results=origFrameImg.copy()
+            contadorFrames += 1
 #            dim = 128
 #            img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
 #            img = hogcv2.compute(img)
@@ -358,35 +354,50 @@ def test_04(videoFilePath,videoFileName):
 #            print(hist.shape)
 #            print(hist[:36])
             fgmask = fgbg.apply(image_results)
-            dilation = cv2.dilate(fgmask,kernel,iterations = 3)
-            erosion = cv2.erode(dilation,kernel,iterations = 2)
+#            fgmask = cv2.dilate(fgmask,kernel,iterations = 1)
+#            fgmask = cv2.erode(fgmask,kernel,iterations = 1)
+            fgmask = cv2.cv2.morphologyEx(fgmask, cv2.cv2.MORPH_OPEN, kernel2)
+            output = cv2.cv2.connectedComponentsWithStats(fgmask, connectivity, 
+                                                      cv2.cv2.CV_32S)
+            for i in range(output[0]):
+                if output[2][i][4] >= min_thresh and output[2][i][4] <= max_thresh:
+                    cv2.cv2.rectangle(image_results, 
+                  (output[2][i][0], output[2][i][1]), (
+                    output[2][i][0] + output[2][i][2], output[2][i][1] + output[2][i][3]), (0, 255, 0), 2)
 #             dilation = cv2.dilate(erosion,kernel,iterations = 2)
 #            fgmaskResized = cv2.resize(fgmask, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
-            fgmaskResized = cv2.resize(erosion, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
+#            fgmaskResized = cv2.resize(fgmask, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
+            fgmaskResized = cv2.cv2.resize(image_results, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.cv2.INTER_AREA)
+            fgmaskResized2 = cv2.cv2.resize(fgmask, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.cv2.INTER_AREA)
 #            fgmaskResized = cv2.resize(dilation, (len(fgmask[0])//2,len(fgmask)//2), interpolation = cv2.INTER_AREA)
 #            cv2.imshow('Results',image_results)
 #            cv2.imshow('frame',fgmask)
-            cv2.imshow('frame',fgmaskResized)
+            cv2.cv2.imshow('frame',fgmaskResized)
+            cv2.cv2.imshow('frame2',fgmaskResized2)
         else:
             break
-        key = cv2.waitKey(20)
+        key = cv2.cv2.waitKey(2)
 #        key = cv2.waitKey(0)
         if key in [27, ord('Q'), ord('q')] or (not bandera):
             bandera=False
             break
     if capture is not None:
         capture.release()
+    print(contadorFrames)
 #    cv2.destroyAllWindows()
     
 def test_05():
     global bandera
     bandera=True
-    for i in range(0,100):
+    for i in range(0,250):
         if bandera:
             filename='chunk_'+str(i).zfill(6)+'.avi'
+#            filename='chunk_'+str(i).zfill(6)+'.mp4'
             print(filename)
             test_04('/home/pepe/DATOS/Shared_Videos/TijuanaSantos/folder_of_chunks',filename)
-    cv2.destroyAllWindows()
+#            test_04('/home/pepe/DATOS/LigaMX/Jornada_07/chunksPrueba30/folder_of_chunks',filename)
+#            test_04('/home/pepe/DATOS/LigaMX/Jornada_07/chunksPrueba30/folder_of_chunks_TV',filename)
+    cv2.cv2.destroyAllWindows()
 
 def test_06():
     dataHogPositivosTest=hoggify(PATH_POSITIVAS_TEST,'jpg',False)
@@ -424,24 +435,48 @@ def test_08():
             f.write("%s %f\n"%(listOfFiles[i],predicted_proba[i,0]))
         f.close()
 #    print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
-    
+
+
 def test_09():
-    dataHogPositivosTest=hoggify(PATH_POSITIVAS_TEST,'jpg',False)
-    dataHogNegativosTest=hoggify(PATH_NEGATIVAS_TEST,'jpg',False)
-    nTest=len(dataHogPositivosTest)
-    mTest=len(dataHogNegativosTest)
-    dataHogTest=dataHogPositivosTest+dataHogNegativosTest
-    labelsHogTest=[0]*nTest+[1]*mTest
+    extesion = 'png'
+    dataHogPositivosTest = hoggify(PATH_POSITIVAS_TEST, extesion, False)
+    dataHogNegativosTest = hoggify(PATH_NEGATIVAS_TEST, extesion, False)
+    nTest = len(dataHogPositivosTest)
+    mTest = len(dataHogNegativosTest)
+    dataHogTest = dataHogPositivosTest+dataHogNegativosTest
+    labelsHogTest = [0]*nTest+[1]*mTest
     clf = joblib.load(MODEL_PATH+'/'+'modelo_svm_scikit.pkl', 'wb')
-    predicted=clf.predict(dataHogTest)
-    predicted_proba=clf.predict_proba(dataHogTest)
+    predicted = clf.predict(dataHogTest)
+    predicted_proba = clf.predict_proba(dataHogTest)
     print(predicted_proba)
     print(len(predicted_proba))
-    print("Acurracy score: ",accuracy_score(labelsHogTest, predicted))
-        
-if __name__=='__main__':
+    print("Acurracy score: ", accuracy_score(labelsHogTest, predicted))
+
+
+
+if __name__ == '__main__':
 #    test_05()
-    test_08()
+    path = '/home/pepe/DATOS/Shared_Videos/TijuanaSantos'
+    filename_game_config = 'GameConfig.Match'
+    game_config_files = pputils.readGameConfigFile(path,filename_game_config)
+    data_transform_matrix = pputils.reader_YAML(path,game_config_files[2])
+#            print(line, end = '')
+#    print(readGameConfigFile(path,filename))
+    # with open(path+'/'+filename.lstrip('/'), 'r') as f:
+    #     yaml.load(f)
+    # fs = cv2.cv2.FileStorage(path+'/'+filename.lstrip('/'), cv2.cv2.FILE_STORAGE_READ)
+    # fs.load()
+    # # print(fs['MatchImageControlPoints'])
+    # print(fs.getNode('MatchImageControlPoints'))
+    # fs.release()
+
+
+#    with cv2.cv2.FileStorage(path+'/'+filename.lstrip('/'), cv2.cv2.FILE_STORAGE_READ) as fs:
+#        print(fs["MatchImageControlPoints"])  # Prints a matrix (read as a NumPy array)
+    # fn = fs.getNode("MatchImageControlPoints")
+    # print(np.asarray(fn))
+
+#    test_09()
 #    test_03()
 #    responses=np.repeat(np.arange(2),250)[:,np.newaxis]
 #    dataHogPositivos=hoggify(PATH_POSITIVAS,'jpg',False)
