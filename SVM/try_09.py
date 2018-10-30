@@ -462,6 +462,7 @@ if __name__ == '__main__':
     game_config_files = pputils.readGameConfigFile(path,filename_game_config)
     data_transform_matrix = pputils.reader_YAML(path,game_config_files[2])
     test_03()
+    #testeando
 #            print(line, end = '')
 #    print(readGameConfigFile(path,filename))
     # with open(path+'/'+filename.lstrip('/'), 'r') as f:
