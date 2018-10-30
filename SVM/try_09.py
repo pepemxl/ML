@@ -39,13 +39,14 @@ PATH_POSITIVAS = "/home/pepe/DATOS/imagenes/MuestrasPlayers/Humanos"
 PATH_NEGATIVAS = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanos"
 #PATH_POSITIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers/HumanosTrain"
 #PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTrain"
-#PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/HumanosTest"
-#PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTest"
+# PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/HumanosTest"
+# PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers/NoHumanosTest"
 PATH_POSITIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTrain"
 PATH_NEGATIVAS_TRAIN = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTrain"
 PATH_POSITIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/HumanosTest"
 PATH_NEGATIVAS_TEST = "/home/pepe/DATOS/imagenes/MuestrasPlayers4/NoHumanosTest"
-MODEL_PATH= "/home/pepe/DATOS/imagenes/MuestrasPlayers"
+EXTENSION = 'png'
+MODEL_PATH= "/home/pepe/DATOS/imagenes/MuestrasPlayers4"
 MODEL_FILENAME = "./model"
 
  
@@ -460,6 +461,7 @@ if __name__ == '__main__':
     filename_game_config = 'GameConfig.Match'
     game_config_files = pputils.readGameConfigFile(path,filename_game_config)
     data_transform_matrix = pputils.reader_YAML(path,game_config_files[2])
+    test_03()
 #            print(line, end = '')
 #    print(readGameConfigFile(path,filename))
     # with open(path+'/'+filename.lstrip('/'), 'r') as f:
