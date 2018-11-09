@@ -346,6 +346,7 @@ def test_04(videoFilePath, videoFileName):
         success, origFrameImg = capture.read()
         if success:
             image_results=origFrameImg.copy()
+            cv2.cv2.imwrite('frame'+str(currentSingleFrameNumber)+'.png',image_results)
             contadorFrames += 1
 #            dim = 128
 #            img = cv2.resize(image, (dim,dim), interpolation = cv2.INTER_AREA)
@@ -390,7 +391,7 @@ def test_04(videoFilePath, videoFileName):
 def test_05():
     global bandera
     bandera=True
-    for i in range(0,250):
+    for i in range(100,250):
         if bandera:
             filename='chunk_'+str(i).zfill(6)+'.avi'
 #            filename='chunk_'+str(i).zfill(6)+'.mp4'
@@ -461,7 +462,7 @@ if __name__ == '__main__':
     filename_game_config = 'GameConfig.Match'
     game_config_files = pputils.readGameConfigFile(path,filename_game_config)
     data_transform_matrix = pputils.reader_YAML(path,game_config_files[2])
-    test_03()
+    test_05()
     #testeando
 #            print(line, end = '')
 #    print(readGameConfigFile(path,filename))
