@@ -337,10 +337,11 @@ def read_frame_from_chunk(path, current_chunk_number, current_frame_on_chunk):
     filename = 'chunk_'+str(current_chunk_number).zfill(6)+'.avi'
     video_file_name = path+'/folder_of_chunks/'+filename
     if video_file_name != _video_capture_file:
-        try:
-            _video_capture.release()
-        except:
-            print('Error al intentar liberar capturadora')
+        if _video_capture != None:
+            try:
+                _video_capture.release()
+            except:
+                print('Error al intentar liberar capturadora')
         _video_capture = cv2.cv2.VideoCapture(video_file_name)
         _video_capture_file = video_file_name
     if(not _video_capture.isOpened()):
@@ -528,11 +529,23 @@ def draw_boxes_on_frame(image, current_single_frame_number):
     global width_array
     global height_array
     global probability_array
+    global soccer_field_points
+    q1 = [int(min(soccer_field_points[:, 0])), int(min(soccer_field_points[:, 1]))]
     N_min = min(frame_id_array)
     total = vector_SIZE[current_single_frame_number-N_min]
+    inicio = vector_INI[current_single_frame_number-N_min]
+#    print('total {}'.format(total))
     for i in range(total):
-        print('hola mundo')
-
+#        print('frame {}'.format(frame_id_array[inicio+i]))
+        x_temp = x_original_array[inicio + i] + q1[0]
+        y_temp = y_original_array[inicio + i] + q1[1]
+        width_temp = width_array[inicio + i]
+        height_temp = height_array[inicio + i]
+        P1 = (int(x_temp - width_temp//2),int(y_temp-height_temp))
+        P2 = (int(x_temp + width_temp//2),int(y_temp))
+        cv2.cv2.rectangle(image,P1,P2,(0,255,0),1)
+        print('P ({0},{1})'.format(x_temp,y_temp))
+        print('P1 ({0},{1}) P2 ({2},{3})'.format(P1[0],P1[1],P2[0],P2[1]))
 
 
 def test_01_arrays(game_id_array, frame_id_array, x_original_array,
@@ -562,6 +575,7 @@ def test_02_arrays(game_id_array, frame_id_array, x_original_array,
     height_array.append(40)
     probability_array.append(.8972)
 
+
 def test_03_bounding_boxes_from_database(path, frame_ini, frame_end):
     global bandera
     bandera = True
@@ -570,7 +584,7 @@ def test_03_bounding_boxes_from_database(path, frame_ini, frame_end):
                       y_original_array, x_field_array, y_field_array,
                       width_array, height_array, probability_array)
     connect_to_database()
-    query = select_yolo('cobraj06', 'tblyolo', 50106, frame_ini, frame_end)
+    query = select_yolo('cobraj06', 'tblyolo', 60106, frame_ini, frame_end)
     cursor = execute_query(query)
     for (game_id, frame_id, x_original, y_original, x_field, y_field, width, height, probability) in cursor:
         game_id_array.append(game_id)
@@ -610,7 +624,7 @@ if __name__ == '__main__':
     bounding_boxes = read_bounding_boxes(path, game_config_files[3])
     game_id = read_game_id(path, game_config_files[1])
     create_mask(path)
-    test_03_bounding_boxes_from_database(path, 200*1, 200*2-1)
+    test_03_bounding_boxes_from_database(path, 200*50, 200*150-1)
 #    print(cv2.CAP_PROP_POS_FRAMES)
     #    read_video_chunks(path, 0, 100)
 #    cursor.close()
